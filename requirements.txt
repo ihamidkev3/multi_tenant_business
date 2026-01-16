@@ -1,0 +1,23 @@
+# dbt Core
+dbt-core>=1.0.0,<2.0.0
+
+# dbt Adapters (install the one for your data warehouse)
+# Uncomment the adapter you need:
+
+# For Snowflake
+# dbt-snowflake>=1.0.0
+
+# For BigQuery
+# dbt-bigquery>=1.0.0
+
+# For Redshift
+# dbt-redshift>=1.0.0
+
+# For Postgres
+# dbt-postgres>=1.0.0
+
+# For Databricks
+# dbt-databricks>=1.0.0
+
+# For SQL Server
+# dbt-sqlserver>=1.0.0

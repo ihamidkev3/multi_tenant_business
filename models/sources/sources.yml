@@ -1,0 +1,83 @@
+version: 2
+
+sources:
+  - name: shopify
+    description: Shopify e-commerce data
+    database: "{{ var('tenant_db', env_var('TENANT_DB')) }}"
+    schema: shopify
+    tables:
+      - name: orders
+        freshness:
+          warn_after: {count: 1, period: day}
+          error_after: {count: 1, period: day}
+          loaded_at_field: updated_at
+        columns:
+          - name: order_id
+            tests:
+              - not_null
+              - unique
+          - name: customer_id
+            tests:
+              - not_null
+      - name: customers
+        freshness:
+          warn_after: {count: 1, period: day}
+          error_after: {count: 1, period: day}
+          loaded_at_field: updated_at
+        columns:
+          - name: customer_id
+            tests:
+              - not_null
+              - unique
+
+  - name: hubspot
+    description: HubSpot CRM data
+    database: "{{ var('tenant_db', env_var('TENANT_DB')) }}"
+    schema: hubspot
+    tables:
+      - name: contacts
+        freshness:
+          warn_after: {count: 1, period: day}
+          error_after: {count: 1, period: day}
+          loaded_at_field: last_modified_date
+        columns:
+          - name: contact_id
+            tests:
+              - not_null
+              - unique
+      - name: deals
+        freshness:
+          warn_after: {count: 1, period: day}
+          error_after: {count: 1, period: day}
+          loaded_at_field: last_modified_date
+        columns:
+          - name: deal_id
+            tests:
+              - not_null
+              - unique
+
+  - name: facebook
+    description: Facebook Ads data
+    database: "{{ var('tenant_db', env_var('TENANT_DB')) }}"
+    schema: facebook
+    tables:
+      - name: ads
+        freshness:
+          warn_after: {count: 1, period: day}
+          error_after: {count: 1, period: day}
+          loaded_at_field: updated_at
+        columns:
+          - name: ad_id
+            tests:
+              - not_null
+              - unique
+      - name: campaigns
+        freshness:
+          warn_after: {count: 1, period: day}
+          error_after: {count: 1, period: day}
+          loaded_at_field: updated_at
+        columns:
+          - name: campaign_id
+            tests:
+              - not_null
+              - unique

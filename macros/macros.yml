@@ -1,0 +1,22 @@
+version: 2
+
+macros:
+  - name: table_exists
+    description: |
+      Checks if a source table exists in the database.
+      Returns true if the table exists, false otherwise.
+      Used to conditionally enable staging models based on table availability.
+    arguments:
+      - name: source_name
+        type: string
+        description: Name of the source (e.g., 'shopify', 'hubspot', 'facebook')
+      - name: table_name
+        type: string
+        description: Name of the table (e.g., 'orders', 'contacts', 'ads')
+
+  - name: tenant_schema
+    description: |
+      Generates tenant-specific schema name in format: stg_<tenant_name> (lowercase).
+      Requires 'tenant' variable to be set via --vars.
+      Raises compiler error if tenant variable is not provided.
+    arguments: []
