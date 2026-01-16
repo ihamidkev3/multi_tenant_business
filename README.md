@@ -2,14 +2,6 @@
 
 Multi-tenant dbt pipeline with dynamic database selection and tenant-specific schema isolation. Automatically handles missing sources per tenant using conditional execution.
 
-## Architecture
-```mermaid
-graph TD
-    A[Tenant Databases] -->|Dynamic Selection| B[Source Tables]
-    B -->|Table Existence Check| C[Staging Models]
-    C -->|Conditional Execution| D[Tenant Schemas]
-    D -->|Left Joins| E[Mart Models]
-```
 
 ## Quick Start
 ```bash
@@ -37,6 +29,16 @@ multi_Tenants/
 │   └── test_tenant_isolation.sql
 └── scripts/
     └── test_tenants.sh      # Automated test script
+```
+
+
+## Architecture
+```mermaid
+graph TD
+    A[Tenant Databases] -->|Dynamic Selection| B[Source Tables]
+    B -->|Table Existence Check| C[Staging Models]
+    C -->|Conditional Execution| D[Tenant Schemas]
+    D -->|Left Joins| E[Mart Models]
 ```
 
 ## Setup
