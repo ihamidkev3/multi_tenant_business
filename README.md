@@ -32,14 +32,11 @@ multi_Tenants/
 ```
 
 
-## Architecture
-```mermaid
-graph TD
-    A[Tenant Databases] -->|Dynamic Selection| B[Source Tables]
-    B -->|Table Existence Check| C[Staging Models]
-    C -->|Conditional Execution| D[Tenant Schemas]
-    D -->|Left Joins| E[Mart Models]
-```
+**Data Flow:**
+1. Tenant databases → Source tables (dynamic selection via `tenant_db`)
+2. Source tables → Staging models (only if table exists)
+3. Staging models → Mart models (left joins, handles missing sources)
+4. All models → Tenant-specific schemas (`stg_<tenant_name>`)
 
 ## Setup
 
