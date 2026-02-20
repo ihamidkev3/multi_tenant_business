@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: mart_tenant
+    description: Combined mart model that merges all platform sources per tenant
+    columns:
+      - name: customer_id
+        description: Customer ID used for cross-platform joins
+      - name: order_ids
+        description: Array of Shopify order IDs for the customer (NULL if tenant doesn't have Shopify)
+      - name: contact_ids
+        description: Array of HubSpot contact IDs for the customer (NULL if tenant doesn't have HubSpot)
+      - name: ad_ids
+        description: Array of Facebook ad IDs for the customer (NULL if tenant doesn't have Facebook)

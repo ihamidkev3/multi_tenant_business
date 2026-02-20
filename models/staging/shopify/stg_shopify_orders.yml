@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: stg_shopify_orders
+    description: Staging table for Shopify orders
+    columns:
+      - name: order_id
+        description: Unique ID for the order
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Customer identifier associated with the order
+        tests:
+          - not_null

@@ -9,40 +9,64 @@
 
 with shopify as (
     {% if has_shopify %}
-        select * from {{ ref('stg_shopify_orders') }}
+        select 
+            customer_id, 
+            array_agg(order_id order by order_id) as order_ids
+        from {{ ref('stg_shopify_orders') }}
+        group by customer_id
     {% else %}
         select 
-            cast(null as string) as order_id,
-            cast(null as string) as customer_id
+            cast(null as {{ dbt.type_string() }}) as customer_id,
+            cast(null as {{ dbt.type_array() }}) as order_ids
         where false
     {% endif %}
 ),
 hubspot as (
     {% if has_hubspot %}
-        select * from {{ ref('stg_hubspot_contacts') }}
+        select 
+            customer_id, 
+            array_agg(contact_id order by contact_id) as contact_ids
+        from {{ ref('stg_hubspot_contacts') }}
+        group by customer_id
     {% else %}
         select 
-            cast(null as string) as contact_id
+            cast(null as {{ dbt.type_string() }}) as customer_id,
+            cast(null as {{ dbt.type_array() }}) as contact_ids
         where false
     {% endif %}
 ),
 facebook as (
     {% if has_facebook %}
-        select * from {{ ref('stg_facebook_ads') }}
+        select 
+            customer_id, 
+            array_agg(ad_id order by ad_id) as ad_ids
+        from {{ ref('stg_facebook_ads') }}
+        group by customer_id
     {% else %}
         select 
-            cast(null as string) as ad_id
+            cast(null as {{ dbt.type_string() }}) as customer_id,
+            cast(null as {{ dbt.type_array() }}) as ad_ids
         where false
     {% endif %}
+),
+
+customer_spine as (
+    select customer_id from shopify
+    where customer_id is not null
+    union
+    select customer_id from hubspot
+    where customer_id is not null
+    union
+    select customer_id from facebook
+    where customer_id is not null
 )
 
 select
-    s.order_id,
-    s.customer_id,
-    h.contact_id,
-    f.ad_id
-from shopify s
-left join hubspot h
-    on s.customer_id = h.contact_id
-left join facebook f
-    on h.contact_id = f.ad_id
+    c.customer_id,
+    s.order_ids,
+    h.contact_ids,
+    f.ad_ids
+from customer_spine c
+left join shopify s  on c.customer_id = s.customer_id
+left join hubspot h  on c.customer_id = h.customer_id
+left join facebook f on c.customer_id = f.customer_id

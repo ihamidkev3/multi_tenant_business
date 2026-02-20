@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: stg_hubspot_contacts
+    description: Staging table for HubSpot contacts
+    columns:
+      - name: contact_id
+        description: Unique ID for the contact
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Customer identifier mapped to Shopify/Facebook for mart joins
+        tests:
+          - not_null

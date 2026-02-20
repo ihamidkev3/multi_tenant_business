@@ -1,0 +1,12 @@
+version: 2
+
+models:
+  - name: stg_facebook_ads
+    description: Staging table for Facebook ads
+    columns:
+      - name: ad_id
+        description: Unique ad ID from Facebook (for reference, not join)
+      - name: customer_id
+        description: Customer identifier mapped to Shopify or HubSpot
+        tests:
+          - not_null

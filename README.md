@@ -1,137 +1,82 @@
 # Multi-Tenant dbt Project
 
-Multi-tenant dbt pipeline with dynamic database selection and tenant-specific schema isolation. Automatically handles missing sources per tenant using conditional execution.
+Tenant-aware dbt pipeline with:
+- dynamic source database selection via `tenant_db`
+- tenant schema isolation via `tenant_schema()`
+- conditional staging model enablement via `table_exists()`
+- stable mart outputs when some sources are missing
+- source-level tests/freshness are skipped to prevent failures when tenants do not have all source tables
+- model-level tests are applied at the staging model level
 
+## Architecture
 
-## Quick Start
-```bash
-# Run for a tenant
-dbt run --vars '{"tenant": "TENANT1", "tenant_db": "tenant1_db"}'
+- Staging layer reflects physical reality. If a source table does not exist, the staging model is disabled.
+- Mart layer stays enabled to keep a stable DAG and contract. Missing sources return empty, typed fallback CTEs.
+- `mart_tenant` outputs one row per `customer_id` with platform IDs aggregated as arrays (`order_ids`, `contact_ids`, `ad_ids`).
+- `array_agg(... order by ...)` is used for deterministic array ordering.
+- `mart_tenant` array outputs are compatible with adapters that support array data types/functions.
 
-# Run specific models
-dbt run --select staging.* --vars '{"tenant": "TENANT1", "tenant_db": "tenant1_db"}'
-```
 
 ## Project Structure
-```
-multi_Tenants/
+```text
+multi_tenants/
 ├── macros/
-│   ├── macros.yml           # Macro documentation
-│   ├── table_exists.sql     # Table existence check
-│   └── tenant_schema.sql    # Tenant schema generator
+│   ├── macros.yml                    # Macro docs
+│   ├── table_exists.sql              # Source existence check
+│   └── tenant_schema.sql             # Tenant schema helper
 ├── models/
-│   ├── sources/sources.yml  # Source definitions
-│   ├── staging/             # Platform staging models
-│   └── marts/               # Combined business logic
-├── tests/                   # Integration tests
-│   ├── test_source_availability.sql
-│   ├── test_conditional_execution.sql
-│   └── test_tenant_isolation.sql
+│   ├── sources/sources.yml           # Tenant-aware source definitions
+│   ├── staging/                      # Conditionally enabled staging models
+│   └── marts/
+│       ├── mart_tenant.sql           # Customer mart with array ID outputs
+│       └── mart_tenant.yml           # Mart column docs
 └── scripts/
-    └── test_tenants.sh      # Automated test script
+    └── tenants.sh                    # Single-tenant runner helper
 ```
 
+## Required Vars
 
-**Data Flow:**
-1. Tenant databases → Source tables (dynamic selection via `tenant_db`)
-2. Source tables → Staging models (only if table exists)
-3. Staging models → Mart models (left joins, handles missing sources)
-4. All models → Tenant-specific schemas (`stg_<tenant_name>`)
+- `tenant` (example: `TENANT1`)
+- `tenant_db` (example: `tenant1_db`)
 
-## Setup
+## Quick Start
 
-### 1. Install Dependencies
 ```bash
-pip install dbt-<adapter>  # e.g., dbt-snowflake, dbt-bigquery
+pip install -r requirements.txt
+pip install dbt-snowflake  # or your adapter
+
+dbt run --vars '{"tenant":"TENANT1","tenant_db":"tenant1_db"}'
 ```
 
-### 2. Configure Profile
-```yaml
-# ~/.dbt/profiles.yml
-multitenants:
-  target: dev
-  outputs:
-    dev:
-      type: snowflake  # or bigquery, redshift, etc.
-      account: your_account
-      user: your_user
-      password: your_password
-      database: your_database
-      warehouse: your_warehouse
-      schema: your_schema
+## Tenant Script
+
+Run one tenant:
+
+```bash
+./scripts/tenants.sh TENANT1 tenant1_db
 ```
 
-## How It Works
-
-**Conditional Execution:**
-- Staging models only build if source tables exist
-- `table_exists()` macro checks table existence
-- Missing tables → staging model skipped
-- Mart models use empty CTEs for missing sources
-- Left joins return NULL for missing data
-
-**Example:**
-- Tenant A: Has Shopify + HubSpot + Facebook → all data in mart
-- Tenant B: Has Shopify + HubSpot only → Facebook columns NULL
-- Tenant C: Has Shopify only → HubSpot/Facebook columns NULL
-
-## Variables
-
-**Required:**
-- `tenant`: Tenant name (e.g., "TENANT1")
-- `tenant_db`: Tenant database name (e.g., "tenant1_db")
-
-**Optional:**
-- `TENANT_DB`: Environment variable (fallback)
-
-## Data Sources
-
-- **Shopify**: `orders`, `customers`
-- **HubSpot**: `contacts`, `deals`
-- **Facebook**: `ads`, `campaigns`
-
-All sources use dynamic database via `tenant_db` variable.
+What it does:
+1. Runs `dbt run` for the tenant.
+2. Runs `dbt run-operation table_exists` for:
+   - `shopify.orders`
+   - `hubspot.contacts`
+   - `facebook.ads`
 
 ## Common Commands
 
 ```bash
-# Run all models
-dbt run --vars '{"tenant": "TENANT1", "tenant_db": "tenant1_db"}'
-
-# Run by platform
-dbt run --select tag:shopify --vars '{"tenant": "TENANT1", "tenant_db": "tenant1_db"}'
-
-# Check which sources tenant has (informational)
-dbt test --select test_source_availability --vars '{"tenant": "TENANT1", "tenant_db": "tenant1_db"}'
-
-# Run all tests
-dbt test --vars '{"tenant": "TENANT1", "tenant_db": "tenant1_db"}'
-
-# Generate docs
-dbt docs generate --vars '{"tenant": "TENANT1", "tenant_db": "tenant1_db"}'
-dbt docs serve
+dbt run --vars '{"tenant":"TENANT1","tenant_db":"tenant1_db"}'
+dbt run --select staging --vars '{"tenant":"TENANT1","tenant_db":"tenant1_db"}'
+dbt run-operation table_exists --args '{"source_name":"shopify","table_name":"orders"}' --vars '{"tenant":"TENANT1","tenant_db":"tenant1_db"}'
 ```
 
-## Troubleshooting
-
-**Models not running?**
-- Verify `tenant` and `tenant_db` variables are set
-- Run `dbt debug`
-
-**Staging model skipped?**
-- Table doesn't exist in tenant database (expected behavior)
-- Not all tenants have all sources
-
-**Missing data in marts?**
-- Missing sources return NULL (expected)
-- Verify source tables exist in tenant database
-- Run `test_source_availability` to see which sources tenant has
 
 ## Resources
 
-- [dbt Documentation](https://docs.getdbt.com/)
-- [dbt Variables](https://docs.getdbt.com/docs/build/jinja-macros#variables)
+- https://docs.getdbt.com/
+- https://docs.getdbt.com/docs/build/jinja-macros#variables
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT. See `LICENSE`.

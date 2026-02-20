@@ -7,28 +7,11 @@ sources:
     schema: shopify
     tables:
       - name: orders
-        freshness:
-          warn_after: {count: 1, period: day}
-          error_after: {count: 1, period: day}
-          loaded_at_field: updated_at
         columns:
           - name: order_id
-            tests:
-              - not_null
-              - unique
+            description: Unique ID for the order
           - name: customer_id
-            tests:
-              - not_null
-      - name: customers
-        freshness:
-          warn_after: {count: 1, period: day}
-          error_after: {count: 1, period: day}
-          loaded_at_field: updated_at
-        columns:
-          - name: customer_id
-            tests:
-              - not_null
-              - unique
+            description: Customer identifier for cross-platform joins
 
   - name: hubspot
     description: HubSpot CRM data
@@ -36,25 +19,11 @@ sources:
     schema: hubspot
     tables:
       - name: contacts
-        freshness:
-          warn_after: {count: 1, period: day}
-          error_after: {count: 1, period: day}
-          loaded_at_field: last_modified_date
         columns:
           - name: contact_id
-            tests:
-              - not_null
-              - unique
-      - name: deals
-        freshness:
-          warn_after: {count: 1, period: day}
-          error_after: {count: 1, period: day}
-          loaded_at_field: last_modified_date
-        columns:
-          - name: deal_id
-            tests:
-              - not_null
-              - unique
+            description: HubSpot native contact ID
+          - name: customer_id
+            description: Customer identifier mapped to Shopify/Facebook for mart joins
 
   - name: facebook
     description: Facebook Ads data
@@ -62,22 +31,8 @@ sources:
     schema: facebook
     tables:
       - name: ads
-        freshness:
-          warn_after: {count: 1, period: day}
-          error_after: {count: 1, period: day}
-          loaded_at_field: updated_at
         columns:
           - name: ad_id
-            tests:
-              - not_null
-              - unique
-      - name: campaigns
-        freshness:
-          warn_after: {count: 1, period: day}
-          error_after: {count: 1, period: day}
-          loaded_at_field: updated_at
-        columns:
-          - name: campaign_id
-            tests:
-              - not_null
-              - unique
+            description: Facebook lead ID (for reference)
+          - name: customer_id
+            description: Customer identifier mapped to Shopify/HubSpot for mart joins
